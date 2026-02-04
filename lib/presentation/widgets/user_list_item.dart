@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/user_entity.dart';
+import '../screens/user_form_screen.dart';
 
 class UserListItem extends StatelessWidget {
   final UserEntity usuario;
@@ -16,13 +17,23 @@ class UserListItem extends StatelessWidget {
       elevation: 2,
       child: ListTile(
         leading: CircleAvatar(
-          child: Text(usuario.firstName[0] + usuario.lastName[0]),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          child: Text(
+            (usuario.firstName.isNotEmpty ? usuario.firstName[0] : '') + 
+            (usuario.lastName.isNotEmpty ? usuario.lastName[0] : ''),
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer),
+          ),
         ),
         title: Text('${usuario.firstName} ${usuario.lastName}'),
         subtitle: Text(usuario.email),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: const Icon(Icons.edit_outlined, size: 20),
         onTap: () {
-          // TODO: Navegar al detalle del usuario
+          // Navegar a la pantalla de edición pasando el usuario actual
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => UserFormScreen(user: usuario),
+            ),
+          );
         },
       ),
     );

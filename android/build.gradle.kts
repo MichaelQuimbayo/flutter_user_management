@@ -12,9 +12,21 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    val subproject = project
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(subproject.name)
+    subproject.layout.buildDirectory.value(newSubprojectBuildDir)
+    
+    // Parche para librerías sin namespace (como isar_flutter_libs)
+    // Usamos pluginManager.withPlugin para actuar inmediatamente cuando se aplica el plugin
+    subproject.pluginManager.withPlugin("com.android.library") {
+        subproject.extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.apply {
+            if (namespace == null) {
+                namespace = "dev.isar.${subproject.name.replace("-", "_")}"
+            }
+        }
+    }
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }

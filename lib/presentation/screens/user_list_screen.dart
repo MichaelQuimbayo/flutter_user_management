@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_providers.dart';
 import '../widgets/user_list_item.dart';
+import 'user_form_screen.dart';
 
 class UserListScreen extends ConsumerWidget {
   const UserListScreen({super.key});
@@ -12,7 +13,7 @@ class UserListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista de Usuarios'),
+        title: const Text('Gestión de Usuarios'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: Padding(
@@ -27,6 +28,8 @@ class UserListScreen extends ConsumerWidget {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(25.0)),
                 ),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
           ),
@@ -35,15 +38,29 @@ class UserListScreen extends ConsumerWidget {
       body: usuariosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
-          child: Text('Error al cargar usuarios: $err'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 60),
+              const SizedBox(height: 16),
+              Text('Error al cargar usuarios: $err', textAlign: TextAlign.center),
+            ],
+          ),
         ),
         data: (usuarios) {
           if (usuarios.isEmpty) {
             return const Center(
-              child: Text(
-                'No se encontraron usuarios.\n¡Agrega uno nuevo!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.people_outline, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No se encontraron usuarios.\n¡Agrega uno nuevo!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
@@ -56,11 +73,14 @@ class UserListScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Navegar a la pantalla de creación/edición de usuario
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const UserFormScreen()),
+          );
         },
-        child: const Icon(Icons.add),
+        label: const Text('Añadir Usuario'),
+        icon: const Icon(Icons.add),
       ),
     );
   }
