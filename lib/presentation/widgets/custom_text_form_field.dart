@@ -20,41 +20,39 @@ class CustomTextFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Obtenemos los colores del tema actual para que sean adaptables
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: TextFormField(
         initialValue: initialValue,
         readOnly: readOnly,
         keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF2D3243)),
+        // Eliminamos el color fijo para que use el color de texto del tema (blanco en dark, negro en light)
+        style: const TextStyle(fontSize: 16), 
         decoration: InputDecoration(
           labelText: label,
-          hintText: 'Enter $label',
-          labelStyle: const TextStyle(
-            color: Color(0xFF707E94),
+          hintText: 'Ingrese $label',
+          // Usamos colores del esquema del tema
+          labelStyle: TextStyle(
+            color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
-          hintStyle: const TextStyle(color: Colors.black26),
+          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
           floatingLabelBehavior: FloatingLabelBehavior.always,
-          prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF707E94)) : null,
+          prefixIcon: icon != null ? Icon(icon, color: colorScheme.primary) : null,
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           
-          // Borde redondeado sutil
+          // Nota: Los bordes ya están definidos globalmente en AppTheme, 
+          // pero los dejamos aquí para asegurar la consistencia del radio de 16.0.
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.0),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+            borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.0),
-            borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.0),
-            borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.0),
-            borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
           ),
         ),
         onChanged: onChanged,

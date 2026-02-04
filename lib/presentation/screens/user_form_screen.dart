@@ -17,13 +17,44 @@ class UserFormScreen extends ConsumerWidget {
     final formState = ref.watch(formProvider);
     final formNotifier = ref.read(formProvider.notifier);
 
+    // Escuchamos los cambios de estado para efectos secundarios (navegación y mensajes)
     ref.listen(formProvider, (previous, next) {
+      // 1. Manejo de Errores
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
+
+      // 2. Manejo de Éxito (Cuando deja de guardar y no hay error)
       if (!next.isSaving && (previous?.isSaving ?? false) && next.errorMessage == null) {
+        final isEditing = previous?.isEditing ?? false;
+        
+        // Mostramos el SnackBar de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Text(isEditing 
+                  ? 'Usuario actualizado con éxito' 
+                  : 'Usuario creado con éxito'
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Regresamos a la pantalla anterior
         Navigator.of(context).pop();
       }
     });
@@ -62,7 +93,6 @@ class UserFormScreen extends ConsumerWidget {
               onChanged: (v) => formNotifier.updateField(formState.user.copyWith(phone: v)),
             ),
             
-            // Selector de Fecha con el nuevo diseño
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: InkWell(
@@ -80,24 +110,11 @@ class UserFormScreen extends ConsumerWidget {
                   decoration: InputDecoration(
                     labelText: 'Fecha de Nacimiento',
                     floatingLabelBehavior: FloatingLabelBehavior.always,
-                    labelStyle: const TextStyle(
-                      color: Color(0xFF707E94),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF707E94)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                      borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
+                    prefixIcon: const Icon(Icons.calendar_today_outlined),
                   ),
                   child: Text(
                     DateFormat.yMMMd().format(formState.user.birthDate),
-                    style: const TextStyle(fontSize: 16, color: Color(0xFF2D3243)),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
               ),
@@ -122,7 +139,6 @@ class UserFormScreen extends ConsumerWidget {
               ],
             ),
 
-            // Lista de Direcciones
             if (formState.user.addresses.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -161,7 +177,13 @@ class UserFormScreen extends ConsumerWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: formState.isSaving ? null : formNotifier.saveUser,
-              child: formState.isSaving ? const CircularProgressIndicator() : const Text('Guardar Usuario'),
+              child: formState.isSaving 
+                ? const SizedBox(
+                    height: 20, 
+                    width: 20, 
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                  ) 
+                : const Text('Guardar Usuario'),
             ),
           ],
         ),

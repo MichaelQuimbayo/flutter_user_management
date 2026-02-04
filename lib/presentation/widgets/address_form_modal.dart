@@ -20,7 +20,7 @@ class _AddressFormModalState extends State<AddressFormModal> {
   String city = '';
   String state = '';
   String zipCode = '';
-  AddressLabel label = AddressLabel.home;
+  AddressLabel label = AddressLabel.casa;
   bool isPrimary = false;
 
   @override
