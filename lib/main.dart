@@ -6,6 +6,7 @@ import 'data/models/address_model.dart';
 import 'data/models/user_model.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/user_list_screen.dart';
+import 'presentation/providers/theme_provider.dart'; // Importar el provider
 
 // Provider for Isar instance
 final isarProvider = FutureProvider<Isar>((ref) async {
@@ -15,7 +16,7 @@ final isarProvider = FutureProvider<Isar>((ref) async {
     return await Isar.open(
       [UserModelSchema, AddressModelSchema],
       directory: dir.path,
-      inspector: true, // Enable inspector for debugging
+      inspector: true,
     );
   }
   return Isar.getInstance()!;
@@ -32,14 +33,16 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isarAsyncValue = ref.watch(isarProvider);
+    final themeMode = ref.watch(themeModeProvider); // Observar el modo del tema
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'User Management',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode, // Aplicar el modo del tema
       home: isarAsyncValue.when(
-        data: (isar) => const UserListScreen(), // Pantalla de inicio
+        data: (isar) => const UserListScreen(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (err, stack) => Scaffold(body: Center(child: Text('Error al cargar Isar: $err'))),
       ),

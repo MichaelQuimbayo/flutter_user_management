@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_providers.dart';
+import '../providers/theme_provider.dart'; // Importar el theme provider
 import '../widgets/user_list_item.dart';
 import 'user_form_screen.dart';
 
@@ -9,33 +10,52 @@ class UserListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usersAsync = ref.watch(userListProvider);
+    final usuariosAsync = ref.watch(userListProvider);
+    final themeMode = ref.watch(themeModeProvider); // Observar el modo actual
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Usuarios'),
+        actions: [
+          // Switch para cambiar el tema
+          Row(
+            children: [
+              Icon(themeMode == ThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined, size: 20),
+              Switch(
+                value: themeMode == ThemeMode.dark,
+                onChanged: (isDark) {
+                  ref.read(themeModeProvider.notifier).state = 
+                      isDark ? ThemeMode.dark : ThemeMode.light;
+                },
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
+          preferredSize: const Size.fromHeight(kToolbarHeight + 10),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
             child: TextField(
               onChanged: (query) {
                 ref.read(userSearchQueryProvider.notifier).state = query;
               },
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Buscar por nombre o apellido...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(25.0)),
+                  borderRadius: BorderRadius.circular(16.0),
+                  borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
         ),
       ),
-      body: usersAsync.when(
+      body: usuariosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Column(
@@ -47,8 +67,8 @@ class UserListScreen extends ConsumerWidget {
             ],
           ),
         ),
-        data: (users) {
-          if (users.isEmpty) {
+        data: (usuarios) {
+          if (usuarios.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -65,9 +85,10 @@ class UserListScreen extends ConsumerWidget {
             );
           }
           return ListView.builder(
-            itemCount: users.length,
+            padding: const EdgeInsets.only(top: 8),
+            itemCount: usuarios.length,
             itemBuilder: (context, index) {
-              final usuario = users[index];
+              final usuario = usuarios[index];
               return UserListItem(usuario: usuario);
             },
           );
@@ -79,7 +100,7 @@ class UserListScreen extends ConsumerWidget {
             MaterialPageRoute(builder: (_) => const UserFormScreen()),
           );
         },
-        label: const Text('Añadir Usuario'),
+        label: const Text('Crear Usuario'),
         icon: const Icon(Icons.add),
       ),
     );

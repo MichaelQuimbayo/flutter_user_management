@@ -38,6 +38,7 @@ class UserFormScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Información Personal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
             CustomTextFormField(
               label: 'Nombre',
               initialValue: formState.user.firstName,
@@ -61,21 +62,45 @@ class UserFormScreen extends ConsumerWidget {
               onChanged: (v) => formNotifier.updateField(formState.user.copyWith(phone: v)),
             ),
             
-            // Selector de Fecha
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Fecha de Nacimiento'),
-              subtitle: Text(DateFormat.yMMMd().format(formState.user.birthDate)),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: formState.user.birthDate,
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime.now(),
-                );
-                if (date != null) formNotifier.updateField(formState.user.copyWith(birthDate: date));
-              },
+            // Selector de Fecha con el nuevo diseño
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: formState.user.birthDate,
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) formNotifier.updateField(formState.user.copyWith(birthDate: date));
+                },
+                borderRadius: BorderRadius.circular(16.0),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Fecha de Nacimiento',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    labelStyle: const TextStyle(
+                      color: Color(0xFF707E94),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF707E94)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                      borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
+                    ),
+                  ),
+                  child: Text(
+                    DateFormat.yMMMd().format(formState.user.birthDate),
+                    style: const TextStyle(fontSize: 16, color: Color(0xFF2D3243)),
+                  ),
+                ),
+              ),
             ),
 
             const Divider(height: 32),
@@ -111,6 +136,7 @@ class UserFormScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final addr = formState.user.addresses[index];
                   return Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
                       leading: Icon(
                         addr.isPrimary ? Icons.star : Icons.location_on,
@@ -130,7 +156,10 @@ class UserFormScreen extends ConsumerWidget {
 
             const SizedBox(height: 32),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
               onPressed: formState.isSaving ? null : formNotifier.saveUser,
               child: formState.isSaving ? const CircularProgressIndicator() : const Text('Guardar Usuario'),
             ),
