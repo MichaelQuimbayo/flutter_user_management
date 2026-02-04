@@ -2,22 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-// Importamos los archivos .dart que contienen los modelos. 
-// Los .g.dart se incluyen automáticamente a través de ellos.
 import 'data/models/address_model.dart';
 import 'data/models/user_model.dart';
 import 'core/theme/app_theme.dart';
+import 'presentation/screens/user_list_screen.dart';
 
 // Provider for Isar instance
 final isarProvider = FutureProvider<Isar>((ref) async {
   final dir = await getApplicationDocumentsDirectory();
   
-  // Si los esquemas no se reconocen, es porque falta la generación de código.
-  return await Isar.open(
-    [UserModelSchema, AddressModelSchema],
-    directory: dir.path,
-    inspector: true,
-  );
+  if (Isar.instanceNames.isEmpty) {
+    return await Isar.open(
+      [UserModelSchema, AddressModelSchema],
+      directory: dir.path,
+      inspector: true, // Enable inspector for debugging
+    );
+  }
+  return Isar.getInstance()!;
 });
 
 void main() async {
@@ -38,15 +39,9 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: isarAsyncValue.when(
-        data: (isar) => const Scaffold(
-          body: Center(child: Text('Base de datos inicializada')),
-        ),
-        loading: () => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-        error: (err, stack) => Scaffold(
-          body: Center(child: Text('Error al cargar Isar: $err')),
-        ),
+        data: (isar) => const UserListScreen(), // Pantalla de inicio
+        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        error: (err, stack) => Scaffold(body: Center(child: Text('Error al cargar Isar: $err'))),
       ),
     );
   }
