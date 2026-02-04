@@ -40,7 +40,7 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
           user: initialUser ?? UserEntity(
             firstName: '',
             lastName: '',
-            birthDate: DateTime.now().subtract(const Duration(days: 365 * 20)), // Sugerir 20 años por defecto
+            birthDate: DateTime.now().subtract(const Duration(days: 365 * 20)),
             email: '',
             phone: '',
             addresses: [],
@@ -52,7 +52,6 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
     state = state.copyWith(user: newUser, clearError: true);
   }
 
-  // ... Gestión de Direcciones (addAddress, removeAddress, etc.) ...
   void addAddress(AddressEntity address) {
     final updatedAddresses = List<AddressEntity>.from(state.user.addresses)..add(address);
     _syncAddresses(updatedAddresses, address.isPrimary);
@@ -73,7 +72,7 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
   void _syncAddresses(List<AddressEntity> addresses, bool newIsPrimary) {
     if (newIsPrimary) {
       final synced = addresses.map((a) {
-        if (a.id == addresses.last.id) return a;
+        if (addresses.isNotEmpty && a.id == addresses.last.id) return a;
         return a.copyWith(isPrimary: false);
       }).toList();
       state = state.copyWith(user: state.user.copyWith(addresses: synced));
@@ -86,7 +85,6 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
   }
 
   Future<bool> saveUser() async {
-    // Validaciones
     if (state.user.firstName.trim().length < 2) {
       state = state.copyWith(errorMessage: 'El nombre debe tener al menos 2 caracteres.');
       return false;
@@ -106,7 +104,6 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
       return false;
     }
 
-    // Validación de teléfono (formato estándar de 10 dígitos)
     final phoneRegex = RegExp(r'^\d{10}$');
     if (!phoneRegex.hasMatch(state.user.phone.replaceAll(RegExp(r'\D'), ''))) {
       state = state.copyWith(errorMessage: 'El teléfono debe contener 10 dígitos.');
@@ -122,8 +119,10 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
         state = state.copyWith(isSaving: false, errorMessage: failure.message);
         return false;
       },
-      (success) {
+      (userId) {
         ref.invalidate(userListProvider);
+        // NUEVO: Invalidar el detalle de este usuario específico para forzar recarga
+        ref.invalidate(userByIdProvider(userId));
         state = state.copyWith(isSaving: false);
         return true;
       },
@@ -131,6 +130,6 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
   }
 }
 
-final userFormProvider = StateNotifierProvider.family<UserFormNotifier, UserFormState, UserEntity?>((ref, user) {
+final userFormProvider = StateNotifierProvider.autoDispose.family<UserFormNotifier, UserFormState, UserEntity?>((ref, user) {
   return UserFormNotifier(ref, user);
 });

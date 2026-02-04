@@ -28,10 +28,10 @@ class UserListItem extends StatelessWidget {
         subtitle: Text(usuario.email),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // Navegar a la pantalla de detalle
+          // CAMBIO: Ahora pasamos el ID del usuario para que el detalle sea reactivo
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => UserDetailScreen(user: usuario),
+              builder: (_) => UserDetailScreen(userId: usuario.id!),
             ),
           );
         },
