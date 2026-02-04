@@ -40,7 +40,7 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
           user: initialUser ?? UserEntity(
             firstName: '',
             lastName: '',
-            birthDate: DateTime.now(),
+            birthDate: DateTime.now().subtract(const Duration(days: 365 * 20)), // Sugerir 20 años por defecto
             email: '',
             phone: '',
             addresses: [],
@@ -52,12 +52,9 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
     state = state.copyWith(user: newUser, clearError: true);
   }
 
-  // --- Gestión de Direcciones ---
-
+  // ... Gestión de Direcciones (addAddress, removeAddress, etc.) ...
   void addAddress(AddressEntity address) {
     final updatedAddresses = List<AddressEntity>.from(state.user.addresses)..add(address);
-    
-    // Si es la primera dirección o se marca como principal, ajustamos las demás
     _syncAddresses(updatedAddresses, address.isPrimary);
   }
 
@@ -75,14 +72,12 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
 
   void _syncAddresses(List<AddressEntity> addresses, bool newIsPrimary) {
     if (newIsPrimary) {
-      // Si la nueva es principal, desmarcamos las demás
       final synced = addresses.map((a) {
         if (a.id == addresses.last.id) return a;
         return a.copyWith(isPrimary: false);
       }).toList();
       state = state.copyWith(user: state.user.copyWith(addresses: synced));
     } else {
-      // Si ninguna es principal, la primera lo será por defecto
       if (addresses.isNotEmpty && !addresses.any((a) => a.isPrimary)) {
         addresses[0] = addresses[0].copyWith(isPrimary: true);
       }
@@ -90,42 +85,49 @@ class UserFormNotifier extends StateNotifier<UserFormState> {
     }
   }
 
-  // --- Guardado ---
-
   Future<bool> saveUser() async {
-    if (state.user.firstName.length < 2) {
+    // Validaciones
+    if (state.user.firstName.trim().length < 2) {
       state = state.copyWith(errorMessage: 'El nombre debe tener al menos 2 caracteres.');
       return false;
     }
-    if (state.user.lastName.length < 2) {
+    if (state.user.lastName.trim().length < 2) {
       state = state.copyWith(errorMessage: 'El apellido debe tener al menos 2 caracteres.');
       return false;
     }
     if (!state.user.isValidAge) {
-      state = state.copyWith(errorMessage: 'La edad debe estar entre 18 y 100 años.');
+      state = state.copyWith(errorMessage: 'Edad inválida. Debe tener entre 18 y 100 años.');
       return false;
     }
-    final emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
+    
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(state.user.email)) {
-      state = state.copyWith(errorMessage: 'El formato del email no es válido.');
+      state = state.copyWith(errorMessage: 'Ingrese un correo electrónico válido.');
       return false;
     }
-    if (state.user.phone.isEmpty) {
-      state = state.copyWith(errorMessage: 'El teléfono es requerido.');
+
+    // Validación de teléfono (formato estándar de 10 dígitos)
+    final phoneRegex = RegExp(r'^\d{10}$');
+    if (!phoneRegex.hasMatch(state.user.phone.replaceAll(RegExp(r'\D'), ''))) {
+      state = state.copyWith(errorMessage: 'El teléfono debe contener 10 dígitos.');
       return false;
     }
 
     state = state.copyWith(isSaving: true, clearError: true);
-    try {
-      final repository = ref.read(userRepositoryProvider);
-      await repository.saveUser(state.user);
-      ref.invalidate(userListProvider);
-      state = state.copyWith(isSaving: false);
-      return true;
-    } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Error al guardar: $e');
-      return false;
-    }
+    final repository = ref.read(userRepositoryProvider);
+    final result = await repository.saveUser(state.user);
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(isSaving: false, errorMessage: failure.message);
+        return false;
+      },
+      (success) {
+        ref.invalidate(userListProvider);
+        state = state.copyWith(isSaving: false);
+        return true;
+      },
+    );
   }
 }
 

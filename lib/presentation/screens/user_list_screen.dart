@@ -9,7 +9,7 @@ class UserListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usuariosAsync = ref.watch(userListProvider);
+    final usersAsync = ref.watch(userListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +35,7 @@ class UserListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: usuariosAsync.when(
+      body: usersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Column(
@@ -47,8 +47,8 @@ class UserListScreen extends ConsumerWidget {
             ],
           ),
         ),
-        data: (usuarios) {
-          if (usuarios.isEmpty) {
+        data: (users) {
+          if (users.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -65,9 +65,9 @@ class UserListScreen extends ConsumerWidget {
             );
           }
           return ListView.builder(
-            itemCount: usuarios.length,
+            itemCount: users.length,
             itemBuilder: (context, index) {
-              final usuario = usuarios[index];
+              final usuario = users[index];
               return UserListItem(usuario: usuario);
             },
           );
