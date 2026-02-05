@@ -12,9 +12,33 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    val subproject = project
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(subproject.name)
+    subproject.layout.buildDirectory.value(newSubprojectBuildDir)
+    
+    // Forzado de SDK en todas las librerías
+    subproject.afterEvaluate {
+        if (subproject.hasProperty("android")) {
+            val android = subproject.extensions.getByName("android") as? com.android.build.gradle.BaseExtension
+            android?.apply {
+                compileSdkVersion(34)
+                if (namespace == null) {
+                    namespace = "dev.isar.${subproject.name.replace("-", "_")}"
+                }
+            }
+        }
+    }
+
+    // Forzar resolución de dependencias a nivel global
+    subproject.configurations.all {
+        resolutionStrategy {
+            force("androidx.core:core:1.12.0")
+            force("androidx.core:core-ktx:1.12.0")
+            force("androidx.annotation:annotation-experimental:1.3.0")
+        }
+    }
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }

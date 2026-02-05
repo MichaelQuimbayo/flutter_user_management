@@ -109,7 +109,7 @@ AddressModel _addressModelDeserialize(
   object.isPrimary = reader.readBool(offsets[1]);
   object.label =
       _AddressModellabelValueEnumMap[reader.readByteOrNull(offsets[2])] ??
-          AddressLabel.home;
+          AddressLabel.casa;
   object.neighborhood = reader.readString(offsets[3]);
   object.state = reader.readString(offsets[4]);
   object.street = reader.readString(offsets[5]);
@@ -130,7 +130,7 @@ P _addressModelDeserializeProp<P>(
       return (reader.readBool(offset)) as P;
     case 2:
       return (_AddressModellabelValueEnumMap[reader.readByteOrNull(offset)] ??
-          AddressLabel.home) as P;
+          AddressLabel.casa) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
@@ -150,9 +150,9 @@ const _AddressModellabelEnumValueMap = {
   'other': 2,
 };
 const _AddressModellabelValueEnumMap = {
-  0: AddressLabel.home,
-  1: AddressLabel.work,
-  2: AddressLabel.other,
+  0: AddressLabel.casa,
+  1: AddressLabel.trabajo,
+  2: AddressLabel.otro,
 };
 
 Id _addressModelGetId(AddressModel object) {

@@ -1,4 +1,4 @@
-enum AddressLabel { home, work, other }
+enum AddressLabel { casa, trabajo, otro }
 
 class AddressEntity {
   final String id;
