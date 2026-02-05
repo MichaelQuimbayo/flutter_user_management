@@ -23,6 +23,8 @@ subprojects {
             if (namespace == null) {
                 namespace = "dev.isar.${subproject.name.replace("-", "_")}"
             }
+            // SOLUCIÓN AL ERROR lStar: Forzar compilación con SDK 34
+            compileSdk = 34
         }
     }
 }
