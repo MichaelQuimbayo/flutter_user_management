@@ -6,7 +6,7 @@ Aplicación móvil desarrollada en Flutter para la gestión de usuarios y direcc
 
 ##  Entorno de Desarrollo
 *   **Flutter SDK**: 3.35.4
-*   **Dart SDK**: 3.4.3
+*   **Dart SDK**: 3.9.2
 
 ---
 
