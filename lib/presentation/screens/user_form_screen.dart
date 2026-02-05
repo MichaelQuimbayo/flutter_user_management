@@ -16,25 +16,23 @@ class UserFormScreen extends ConsumerWidget {
     final formProvider = userFormProvider(user);
     final formState = ref.watch(formProvider);
     final formNotifier = ref.read(formProvider.notifier);
+    final colorScheme = Theme.of(context).colorScheme;
 
     // Escuchamos los cambios de estado para efectos secundarios (navegación y mensajes)
     ref.listen(formProvider, (previous, next) {
-      // 1. Manejo de Errores
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
 
-      // 2. Manejo de Éxito (Cuando deja de guardar y no hay error)
       if (!next.isSaving && (previous?.isSaving ?? false) && next.errorMessage == null) {
         final isEditing = previous?.isEditing ?? false;
         
-        // Mostramos el SnackBar de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -54,7 +52,6 @@ class UserFormScreen extends ConsumerWidget {
           ),
         );
 
-        // Regresamos a la pantalla anterior
         Navigator.of(context).pop();
       }
     });
@@ -173,18 +170,28 @@ class UserFormScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 56),
+                backgroundColor: colorScheme.primaryContainer,
+                foregroundColor: colorScheme.onPrimaryContainer,
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: formState.isSaving ? null : formNotifier.saveUser,
               child: formState.isSaving 
-                ? const SizedBox(
-                    height: 20, 
-                    width: 20, 
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                ? SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2, 
+                      color: colorScheme.onPrimaryContainer
+                    )
                   ) 
-                : const Text('Guardar Usuario'),
+                : Text(
+                    formState.isEditing ? 'Actualizar Usuario' : 'Guardar Usuario', 
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                  ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

@@ -6,16 +6,21 @@ import '../../domain/repositories/user_repository.dart';
 import '../models/address_model.dart';
 import '../models/user_model.dart';
 
+/// Implementación del repositorio de usuarios utilizando Isar Database.
+/// Maneja la persistencia local, relaciones y el mapeo entre Entidades y Modelos.
 class IsarUserRepository implements UserRepository {
   final Isar isar;
 
   IsarUserRepository(this.isar);
 
+  /// Obtiene la lista de usuarios, opcionalmente filtrada por nombre o apellido.
+  /// Implementa carga perezosa (lazy loading) para las direcciones vinculadas.
   @override
   Future<Either<Failure, List<UserEntity>>> getUsers({String? query}) async {
     try {
       final List<UserModel> models;
       if (query != null && query.isNotEmpty) {
+        // Filtrado reactivo en Isar ignorando mayúsculas/minúsculas
         models = await isar.userModels
             .filter()
             .firstNameContains(query, caseSensitive: false)
@@ -25,6 +30,8 @@ class IsarUserRepository implements UserRepository {
       } else {
         models = await isar.userModels.where().findAll();
       }
+      
+      // Es necesario cargar explícitamente los Links en Isar antes de convertir a entidad
       for (var model in models) {
         await model.addresses.load();
       }
@@ -34,6 +41,7 @@ class IsarUserRepository implements UserRepository {
     }
   }
 
+  /// Recupera un usuario específico por su ID único.
   @override
   Future<Either<Failure, UserEntity?>> getUserById(int id) async {
     try {
@@ -46,13 +54,16 @@ class IsarUserRepository implements UserRepository {
     }
   }
 
+  /// Guarda o actualiza un usuario y sus direcciones en una única transacción.
+  /// Incluye lógica de sincronización para evitar la duplicidad de direcciones al editar.
   @override
   Future<Either<Failure, int>> saveUser(UserEntity user) async {
     try {
       return await isar.writeTxn(() async {
         final userModel = UserModel.fromEntity(user);
         
-        // Si es edición, limpiamos direcciones viejas para evitar duplicados
+        // Sincronización: Si el usuario ya existe, eliminamos sus direcciones previas
+        // para evitar que queden registros huérfanos o duplicados en la base de datos.
         if (user.id != null) {
           final existing = await isar.userModels.get(user.id!);
           if (existing != null) {
@@ -61,11 +72,11 @@ class IsarUserRepository implements UserRepository {
           }
         }
 
-        // Guardar nuevas direcciones
+        // Persistimos las nuevas direcciones primero
         final addressModels = user.addresses.map(AddressModel.fromEntity).toList();
         await isar.addressModels.putAll(addressModels);
         
-        // Vincular y guardar usuario
+        // Vinculamos las direcciones al modelo de usuario y guardamos la relación
         userModel.addresses.addAll(addressModels);
         final userId = await isar.userModels.put(userModel);
         await userModel.addresses.save();
@@ -77,6 +88,7 @@ class IsarUserRepository implements UserRepository {
     }
   }
 
+  /// Elimina un usuario y todas sus direcciones asociadas de la base de datos.
   @override
   Future<Either<Failure, void>> deleteUser(int id) async {
     try {
@@ -84,7 +96,7 @@ class IsarUserRepository implements UserRepository {
         final user = await isar.userModels.get(id);
         if (user != null) {
           await user.addresses.load();
-          // Borrar direcciones asociadas primero
+          // Eliminación en cascada manual para garantizar la integridad de los datos
           await isar.addressModels.deleteAll(user.addresses.map((addr) => addr.id).toList());
           await isar.userModels.delete(id);
         }

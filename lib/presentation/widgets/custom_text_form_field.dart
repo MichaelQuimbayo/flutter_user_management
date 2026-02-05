@@ -44,8 +44,7 @@ class CustomTextFormField extends StatelessWidget {
           prefixIcon: icon != null ? Icon(icon, color: colorScheme.primary) : null,
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           
-          // Nota: Los bordes ya están definidos globalmente en AppTheme, 
-          // pero los dejamos aquí para asegurar la consistencia del radio de 16.0.
+          // Nota: Los bordes ya están definidos globalmente en AppTheme,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.0),
             borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1.5),

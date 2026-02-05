@@ -11,26 +11,28 @@ class UserListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usuariosAsync = ref.watch(userListProvider);
-    final themeMode = ref.watch(themeModeProvider); // Observar el modo actual
+    final themeMode = ref.watch(themeModeProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Usuarios'),
         actions: [
-          // Switch para cambiar el tema
-          Row(
-            children: [
-              Icon(themeMode == ThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined, size: 20),
-              Switch(
-                value: themeMode == ThemeMode.dark,
-                onChanged: (isDark) {
-                  ref.read(themeModeProvider.notifier).state = 
-                      isDark ? ThemeMode.dark : ThemeMode.light;
-                },
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              onPressed: () {
+                ref.read(themeModeProvider.notifier).state =
+                    themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+              },
+              icon: Icon(
+                themeMode == ThemeMode.light ? Icons.dark_mode_outlined : Icons.light_mode,
+                size: 20,
+                color: colorScheme.primary,
               ),
-            ],
+              tooltip: 'Cambiar tema',
+            ),
           ),
-          const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight + 10),
