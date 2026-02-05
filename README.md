@@ -62,4 +62,13 @@ Suite de pruebas integrada para asegurar la calidad y estabilidad del código:
    cd P:\flutter_user_management | P:\flutter_user_management\.fvm\flutter_sdk\bin\flutter.bat build apk --release
    ```
 
+##  Link Descarga APK
+https://drive.google.com/drive/folders/10i_AOM5ZpfsDbrxI_rKLi0LMQHeUXObQ?usp=sharing
+
+## Screenshots
+![creandoUsuario](https://github.com/user-attachments/assets/202819ff-6dbd-4193-935d-0e152bc44507)
+![detalleUsuario](https://github.com/user-attachments/assets/f7a10199-d40b-4180-b210-eaceeb8c2120)
+![listaUsuario](https://github.com/user-attachments/assets/a73d34ff-c838-4cb5-9d32-ff102af189b8)
+
+
 ---
