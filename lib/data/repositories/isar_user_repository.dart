@@ -1,84 +1,109 @@
+import 'package:dartz/dartz.dart';
 import 'package:isar/isar.dart';
+import '../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../models/address_model.dart';
 import '../models/user_model.dart';
 
+/// Implementación del repositorio de usuarios utilizando Isar Database.
+/// Maneja la persistencia local, relaciones y el mapeo entre Entidades y Modelos.
 class IsarUserRepository implements UserRepository {
   final Isar isar;
 
   IsarUserRepository(this.isar);
 
+  /// Obtiene la lista de usuarios, opcionalmente filtrada por nombre o apellido.
+  /// Implementa carga perezosa (lazy loading) para las direcciones vinculadas.
   @override
-  Future<List<UserEntity>> getUsers({String? query}) async {
-    final List<UserModel> models;
-    
-    if (query != null && query.isNotEmpty) {
-      // Si hay búsqueda, aplicamos los filtros
-      models = await isar.userModels
-          .filter()
-          .firstNameContains(query, caseSensitive: false)
-          .or()
-          .lastNameContains(query, caseSensitive: false)
-          .findAll();
-    } else {
-      // Si no hay búsqueda, usamos .where() que sí permite findAll() directamente
-      models = await isar.userModels.where().findAll();
-    }
-    
-    // Cargar direcciones para cada modelo
-    for (var model in models) {
-      await model.addresses.load();
-    }
-    
-    return models.map((m) => m.toEntity()).toList();
-  }
-
-  @override
-  Future<UserEntity?> getUserById(int id) async {
-    final model = await isar.userModels.get(id);
-    if (model == null) return null;
-    await model.addresses.load();
-    return model.toEntity();
-  }
-
-  @override
-  Future<int> saveUser(UserEntity user) async {
-    return await isar.writeTxn(() async {
-      final model = UserModel.fromEntity(user);
-      
-      // Guardar el usuario
-      final userId = await isar.userModels.put(model);
-      
-      // Manejar direcciones
-      if (user.id != null) {
-        final existing = await isar.userModels.get(user.id!);
-        if (existing != null) {
-          await existing.addresses.load();
-          await isar.addressModels.deleteAll(existing.addresses.map((e) => e.id).toList());
-        }
-      }
-
-      for (var addrEntity in user.addresses) {
-        final addrModel = AddressModel.fromEntity(addrEntity);
-        await isar.addressModels.put(addrModel);
-        model.addresses.add(addrModel);
+  Future<Either<Failure, List<UserEntity>>> getUsers({String? query}) async {
+    try {
+      final List<UserModel> models;
+      if (query != null && query.isNotEmpty) {
+        // Filtrado reactivo en Isar ignorando mayúsculas/minúsculas
+        models = await isar.userModels
+            .filter()
+            .firstNameContains(query, caseSensitive: false)
+            .or()
+            .lastNameContains(query, caseSensitive: false)
+            .findAll();
+      } else {
+        models = await isar.userModels.where().findAll();
       }
       
-      await model.addresses.save();
-      return userId;
-    });
-  }
-
-  @override
-  Future<void> deleteUser(int id) async {
-    await isar.writeTxn(() async {
-      final model = await isar.userModels.get(id);
-      if (model != null) {
+      // Es necesario cargar explícitamente los Links en Isar antes de convertir a entidad
+      for (var model in models) {
         await model.addresses.load();
-        await isar.addressModels.deleteAll(model.addresses.map((e) => e.id).toList());
-        await isar.userModels.delete(id);
       }
-    });
+      return Right(models.map((m) => m.toEntity()).toList());
+    } catch (e) {
+      return Left(DatabaseFailure('Error al obtener usuarios: $e'));
+    }
+  }
+
+  /// Recupera un usuario específico por su ID único.
+  @override
+  Future<Either<Failure, UserEntity?>> getUserById(int id) async {
+    try {
+      final model = await isar.userModels.get(id);
+      if (model == null) return const Right(null);
+      await model.addresses.load();
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(DatabaseFailure('Error al obtener usuario: $e'));
+    }
+  }
+
+  /// Guarda o actualiza un usuario y sus direcciones en una única transacción.
+  /// Incluye lógica de sincronización para evitar la duplicidad de direcciones al editar.
+  @override
+  Future<Either<Failure, int>> saveUser(UserEntity user) async {
+    try {
+      return await isar.writeTxn(() async {
+        final userModel = UserModel.fromEntity(user);
+        
+        // Sincronización: Si el usuario ya existe, eliminamos sus direcciones previas
+        // para evitar que queden registros huérfanos o duplicados en la base de datos.
+        if (user.id != null) {
+          final existing = await isar.userModels.get(user.id!);
+          if (existing != null) {
+            await existing.addresses.load();
+            await isar.addressModels.deleteAll(existing.addresses.map((e) => e.id).toList());
+          }
+        }
+
+        // Persistimos las nuevas direcciones primero
+        final addressModels = user.addresses.map(AddressModel.fromEntity).toList();
+        await isar.addressModels.putAll(addressModels);
+        
+        // Vinculamos las direcciones al modelo de usuario y guardamos la relación
+        userModel.addresses.addAll(addressModels);
+        final userId = await isar.userModels.put(userModel);
+        await userModel.addresses.save();
+        
+        return Right(userId);
+      });
+    } catch (e) {
+      return Left(DatabaseFailure('Error al guardar usuario: $e'));
+    }
+  }
+
+  /// Elimina un usuario y todas sus direcciones asociadas de la base de datos.
+  @override
+  Future<Either<Failure, void>> deleteUser(int id) async {
+    try {
+      await isar.writeTxn(() async {
+        final user = await isar.userModels.get(id);
+        if (user != null) {
+          await user.addresses.load();
+          // Eliminación en cascada manual para garantizar la integridad de los datos
+          await isar.addressModels.deleteAll(user.addresses.map((addr) => addr.id).toList());
+          await isar.userModels.delete(id);
+        }
+      });
+      return const Right(null);
+    } catch (e) {
+      return Left(DatabaseFailure('Error al eliminar usuario: $e'));
+    }
   }
 }
